@@ -42,7 +42,7 @@
 class SocketIOClient {
 	public:
 		typedef void (*DataArrivedDelegate)(SocketIOClient client, char *data);
-		bool connect(Adafruit_CC3000 cc3000, char hostname[], int port = 80);
+		bool connect(Adafruit_CC3000 cc3000, char hostname[], int port = 80, uint32_t theip = 0);
         bool connected();
         void disconnect();
 		void monitor(Adafruit_CC3000 cc3000);

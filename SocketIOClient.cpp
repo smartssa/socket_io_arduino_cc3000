@@ -29,22 +29,25 @@
  */
 #include <SocketIOClient.h>
 
-bool SocketIOClient::connect(Adafruit_CC3000 cc3000, char thehostname[], int theport) {
-  ip = 0;
+bool SocketIOClient::connect(Adafruit_CC3000 cc3000, char thehostname[], int theport, uint32_t theip) {
+  ip = theip;
   uint8_t timeoutRetry = 0;
-  while (ip == 0) {
-    if (!cc3000.getHostByName(thehostname, &ip)) {
-      timeoutRetry++;
-      if (timeoutRetry < 3) {
-        // wdt_reset();
+  if (ip == 0) {
+     Serial.println("Using IP Address");
+  } else {
+    while (ip == 0) {
+      if (!cc3000.getHostByName(thehostname, &ip)) {
+        timeoutRetry++;
+        if (timeoutRetry < 3) {
+          // wdt_reset();
+        }
       }
+      delay(200);
     }
-    delay(200);
   }
-
   unsigned long lastRead = millis();
   do {
-    client = cc3000.connectTCP(ip, 80);
+    client = cc3000.connectTCP(ip, theport);
   } while((!client.connected()) && ((millis() - lastRead) < 3000));
 
   hostname = thehostname;
@@ -86,7 +89,7 @@ void SocketIOClient::monitor(Adafruit_CC3000 cc3000) {
   *databuffer = 0;
 
   if (!client.connected()) {
-    connect(cc3000, hostname, port);
+    connect(cc3000, hostname, port, ip);
   }
 
   if (!client.available()) {
@@ -133,6 +136,7 @@ void SocketIOClient::setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDe
 }
 
 void SocketIOClient::sendHandshake(char hostname[]) {
+  Serial.println("Sending handshake.");
   Serial.println(client.connected());
   client.fastrprint(F("GET /socket.io/1/ HTTP/1.1\r\n"));
   client.fastrprint(F("Host: "));
@@ -161,7 +165,8 @@ void SocketIOClient::eatHeader(void) {
 }
 
 bool SocketIOClient::readHandshake(Adafruit_CC3000 cc3000) {
-  if (!waitForInput()) return false;
+  Serial.println("reading handshake.");
+  //if (!waitForInput()) return false;
 
   // check for happy "HTTP/1.1 200" response
   readLine();
@@ -204,7 +209,7 @@ bool SocketIOClient::readHandshake(Adafruit_CC3000 cc3000) {
 
   unsigned long lastRead = millis();
   do {
-    client = cc3000.connectTCP(ip, 80);
+    client = cc3000.connectTCP(ip, port);
   } while((!client.connected()) && ((millis() - lastRead) < 3000));
 
   Serial.println(F("Reconnected."));
